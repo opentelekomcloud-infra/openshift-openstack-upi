@@ -1,0 +1,134 @@
+# Required Python packages:
+#
+# ansible
+# openstackclient
+# openstacksdk
+# netaddr
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Create Public API LB
+      opentelekomcloud.cloud.loadbalancer:
+        name: "{{ elb_api_name }}"
+        vip_address: "{{ os_apiVIP }}"
+        vip_subnet: "{{ os_subnet }}"
+
+    - name: Create API Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_api_listener_name }}"
+        loadbalancer: "{{ elb_api_name }}"
+        protocol: tcp
+        protocol_port: 6443
+        default_pool: "{{ elb_api_pool_name }}"
+
+    - name: Create 6443 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_api_pool_name }}"
+        description: "Pool of API backends"
+        listener: "{{ elb_api_listener_name }}"
+        lb_algorithm: round_robin
+        protocol: tcp
+
+    - name: Create 6443 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_api_hm_name }}"
+        monitor_port: 6443
+        pool: "{{ elb_api_pool_name }}"
+        type: tcp
+        max_retries: 3
+        delay: 5
+        monitor_timeout: 10
+
+    - name: Create Internal API LB
+      opentelekomcloud.cloud.loadbalancer:
+        name: "{{ elb_api_int_name }}"
+        vip_address: "{{ os_apiVIP_int }}"
+        vip_subnet: "{{ os_subnet }}"
+
+    - name: Create Internal API Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_api_int_listener_name }}"
+        loadbalancer: "{{ elb_api_int_name }}"
+        protocol: tcp
+        protocol_port: 6443
+        default_pool: "{{ elb_api_int_pool_name }}"
+
+    - name: Create Internal 6443 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_api_int_pool_name }}"
+        description: "Pool of API Int backends"
+        listener: "{{ elb_api_int_listener_name }}"
+        lb_algorithm: round_robin
+        protocol: tcp
+
+    - name: Create Int 6443 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_api_int_hm_name }}"
+        monitor_port: 6443
+        pool: "{{ elb_api_int_pool_name }}"
+        type: tcp
+        max_retries: 3
+        delay: 5
+        monitor_timeout: 10
+
+    - name: Create Internal Machine API Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_api_int_listener_22623_name }}"
+        loadbalancer: "{{ elb_api_int_name }}"
+        protocol: tcp
+        protocol_port: 22623
+        default_pool: "{{ elb_api_int_pool_22623_name }}"
+
+    - name: Create Internal Machine API server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_api_int_pool_22623_name }}"
+        description: "Pool of Machine API backends"
+        listener: "{{ elb_api_int_listener_22623_name }}"
+        lb_algorithm: round_robin
+        protocol: tcp
+
+    - name: Create Int 22623 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_api_int_hm_22623_name }}"
+        monitor_port: 22623
+        pool: "{{ elb_api_int_pool_22623_name }}"
+        type: tcp
+        max_retries: 3
+        delay: 5
+        monitor_timeout: 10
+
+    - name: Create Ingress LB
+      opentelekomcloud.cloud.loadbalancer:
+        name: "{{ elb_ingress_name }}"
+        vip_address: "{{ os_ingressVIP }}"
+        vip_subnet: "{{ os_subnet }}"
+
+    - name: Create Ingress Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_ingress_listener_443_name }}"
+        loadbalancer: "{{ elb_ingress_name }}"
+        protocol: tcp
+        protocol_port: 443
+        default_pool: "{{ elb_ingress_pool_443_name }}"
+
+    - name: Create Ingress 443 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_ingress_pool_443_name }}"
+        description: "Pool of Ingress backends"
+        listener: "{{ elb_ingress_listener_443_name }}"
+        lb_algorithm: round_robin
+        protocol: tcp
+
+    - name: Create Ingress 443 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_ingress_hm_443_name }}"
+        monitor_port: 443
+        pool: "{{ elb_ingress_pool_443_name }}"
+        type: tcp
+        max_retries: 3
+        delay: 5
+        monitor_timeout: 10

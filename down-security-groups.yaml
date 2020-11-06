@@ -1,0 +1,26 @@
+# Required Python packages:
+#
+# ansible
+# openstackclient
+# openstacksdk
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Drop haproxy SG
+      openstack.cloud.security_group:
+        name: "{{ os_sg_haproxy }}"
+        state: absent
+
+    - name: Drop worker SG
+      openstack.cloud.security_group:
+        name: "{{ os_sg_worker }}"
+        state: absent
+
+    - name: Drop master SG
+      openstack.cloud.security_group:
+        name: "{{ os_sg_master }}"
+        state: absent

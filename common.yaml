@@ -1,0 +1,72 @@
+- hosts: localhost
+  gather_facts: no
+
+  vars_files:
+  - metadata.json
+
+  tasks:
+  - name: 'Compute resource names'
+    set_fact:
+      cluster_id_tag: "openshiftClusterID={{ infraID }}"
+      primary_cluster_network_tag: "{{ infraID }}-primaryClusterNetwork"
+      os_infra_id: "{{ infraID }}"
+      os_network: "{{ infraID }}-network"
+      os_subnet: "{{ infraID }}-nodes"
+      os_router: "{{ infraID }}-external-router"
+      # Port names
+      os_port_api: "{{ infraID }}-api-port"
+      os_port_ingress: "{{ infraID }}-ingress-port"
+      os_port_bootstrap: "{{ infraID }}-bootstrap-port"
+      os_port_haproxy: "{{ infraID }}-haproxy-port"
+      os_port_master: "{{ infraID }}-master-port"
+      os_port_worker: "{{ infraID }}-worker-port"
+      # Security groups names
+      os_sg_master: "{{ infraID }}-master"
+      os_sg_worker: "{{ infraID }}-worker"
+      os_sg_haproxy: "{{ infraID }}-haproxy"
+      # Server names
+      os_bootstrap_server_name: "{{ infraID }}-bootstrap"
+      os_haproxy_server_name: "{{ infraID }}-haproxy"
+      os_cp_server_name: "{{ infraID }}-master"
+      os_cp_server_group_name: "{{ infraID }}-master"
+      os_compute_server_name: "{{ infraID }}-worker"
+      # Trunk names
+      os_cp_trunk_name: "{{ infraID }}-master-trunk"
+      os_compute_trunk_name: "{{ infraID }}-worker-trunk"
+      # Subnet pool name
+      subnet_pool: "{{ infraID }}-kuryr-pod-subnetpool"
+      # Service network name
+      os_svc_network: "{{ infraID }}-kuryr-service-network"
+      # Service subnet name
+      os_svc_subnet: "{{ infraID }}-kuryr-service-subnet"
+      # Ignition files
+      os_bootstrap_ignition: "{{ infraID }}-bootstrap-ignition.json"
+      os_haproxy_ignition: "{{ infraID }}-haproxy-ignition.json"
+      os_master_0_ignition: "{{ infraID }}-master-0-ignition.json"
+      os_master_1_ignition: "{{ infraID }}-master-1-ignition.json"
+      os_master_2_ignition: "{{ infraID }}-master-2-ignition.json"
+      os_worker_0_ignition: "{{ infraID }}-worker-0-ignition.json"
+      os_worker_1_ignition: "{{ infraID }}-worker-1-ignition.json"
+      os_worker_2_ignition: "{{ infraID }}-worker-2-ignition.json"
+
+      master_volume_size: 120
+      worker_volume_size: 120
+
+      elb_subnet: "100.125.0.0/16"
+      elb_api_name: "{{ infraID }}-api"
+      elb_api_int_name: "{{ infraID }}-api-int"
+      elb_ingress_name: "{{ infraID }}-ingress"
+      elb_api_listener_name: "{{ infraID }}-listener-6443"
+      elb_api_pool_name: "{{ infraID }}-pool-6443"
+      elb_api_hm_name: "{{ infraID }}-hm-6443"
+      elb_api_int_listener_name: "{{ infraID }}-listener-int-6443"
+      elb_api_int_pool_name: "{{ infraID }}-pool-int-6443"
+      elb_api_int_hm_name: "{{ infraID }}-hm-int-6443"
+
+      elb_api_int_listener_22623_name: "{{ infraID }}-listener-int-22623"
+      elb_api_int_pool_22623_name: "{{ infraID }}-pool-int-22623"
+      elb_api_int_hm_22623_name: "{{ infraID }}-hm-int-22623"
+
+      elb_ingress_listener_443_name: "{{ infraID }}-listener-ingress-443"
+      elb_ingress_pool_443_name: "{{ infraID }}-pool-ingress-443"
+      elb_ingress_hm_443_name: "{{ infraID }}-hm-ingress-443"

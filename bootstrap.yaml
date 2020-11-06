@@ -1,0 +1,40 @@
+# Required Python packages:
+#
+# ansible
+# openstackclient
+# openstacksdk
+# netaddr
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+  - name: 'Create the bootstrap server port'
+    openstack.cloud.port:
+      name: "{{ os_port_bootstrap }}"
+      network: "{{ os_network }}"
+      security_groups:
+      - "{{ os_sg_master }}"
+      allowed_address_pairs:
+      - ip_address: "{{ os_apiVIP }}"
+      fixed_ips:
+        - ip_address: "{{ os_subnet_range | next_nth_usable(19) }}"
+
+
+  - name: 'Set bootstrap auto_ip to false'
+    ansible.builtin.set_fact:
+      bootstrap_auto_ip: false
+    when: os_bootstrap_fip is not defined
+
+  - name: 'Create the bootstrap server'
+    openstack.cloud.server:
+      name: "{{ os_bootstrap_server_name }}"
+      image: "{{ os_image_rhcos }}"
+      flavor: "{{ os_flavor_master }}"
+      userdata: "{{ lookup('file', os_bootstrap_ignition) | string }}"
+      floating_ips: "{{ os_bootstrap_fip | default(omit) }}"
+      auto_ip: "{{ bootstrap_auto_ip | default(omit) }}"
+      nics:
+      - port-name: "{{ os_port_bootstrap }}"

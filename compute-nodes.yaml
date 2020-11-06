@@ -1,0 +1,78 @@
+# Required Python packages:
+#
+# ansible
+# openstackclient
+# openstacksdk
+# netaddr
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: 'Create the Compute Plane port 0'
+      os_port:
+        name: "{{ os_port_worker }}-0"
+        network: "{{ os_network }}"
+        security_groups:
+        - "{{ os_sg_worker }}"
+        fixed_ips:
+          - ip_address: "{{ os_subnet_range | next_nth_usable(30) }}"
+
+    - name: 'Create the Compute Plane port 1'
+      os_port:
+        name: "{{ os_port_worker }}-1"
+        network: "{{ os_network }}"
+        security_groups:
+        - "{{ os_sg_worker }}"
+        fixed_ips:
+          - ip_address: "{{ os_subnet_range | next_nth_usable(31) }}"
+
+    - name: 'Create the Compute Plane port 2'
+      os_port:
+        name: "{{ os_port_worker }}-2"
+        network: "{{ os_network }}"
+        security_groups:
+        - "{{ os_sg_worker }}"
+        fixed_ips:
+          - ip_address: "{{ os_subnet_range | next_nth_usable(32) }}"
+
+    - name: 'Create the Compute Plane server 0'
+      os_server:
+        name: "{{ os_compute_server_name }}-0"
+        image: "{{ os_image_rhcos }}"
+        flavor: "{{ os_flavor_worker }}"
+        auto_ip: no
+        userdata: "{{ lookup('file', 'worker.ign') | string }}"
+        nics:
+        - port-name: "{{ os_port_worker }}-0"
+        availability_zone: eu-de-01
+        boot_from_volume: true
+        volume_size: "{{ worker_volume_size }}"
+
+    - name: 'Create the Compute Plane server 1'
+      os_server:
+        name: "{{ os_compute_server_name }}-1"
+        image: "{{ os_image_rhcos }}"
+        flavor: "{{ os_flavor_worker }}"
+        auto_ip: no
+        userdata: "{{ lookup('file', 'worker.ign') | string }}"
+        nics:
+        - port-name: "{{ os_port_worker }}-1"
+        availability_zone: eu-de-02
+        boot_from_volume: true
+        volume_size: "{{ worker_volume_size }}"
+
+    - name: 'Create the Compute Plane server 2'
+      os_server:
+        name: "{{ os_compute_server_name }}-2"
+        image: "{{ os_image_rhcos }}"
+        flavor: "{{ os_flavor_worker }}"
+        auto_ip: no
+        userdata: "{{ lookup('file', 'worker.ign') | string }}"
+        nics:
+        - port-name: "{{ os_port_worker }}-2"
+        availability_zone: eu-de-03
+        boot_from_volume: true
+        volume_size: "{{ worker_volume_size }}"

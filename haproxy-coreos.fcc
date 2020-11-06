@@ -1,0 +1,155 @@
+variant: fcos
+version: 1.0.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-rsa ______PUB_KEY_HERE_____
+      groups:
+        - sudo
+storage:
+  files:
+    - path: /root/.ssh/config
+      contents:
+        inline: |
+          Host *
+            User core
+            IdentityFile ~/.ssh/openshift_kp.pem
+      mode: 0640
+    - path: /etc/hostname
+      contents:
+        inline: ____INFRA_ID-haproxy-0____
+      mode: 0420
+    - path: /etc/haproxy/haproxy.cfg
+      contents:
+        inline: |
+         #---------------------------------------------------------------------
+          # Global settings
+          #---------------------------------------------------------------------
+          global
+             log         127.0.0.1 local0
+          
+              maxconn     10000
+              uid         200
+              gid         200
+              daemon
+          
+              # turn on stats unix socket
+              stats socket /var/lib/haproxy.stat mode 600 level admin
+          
+              # utilize system-wide crypto-policies
+              ssl-default-bind-ciphers PROFILE=SYSTEM
+              ssl-default-server-ciphers PROFILE=SYSTEM
+          
+          #---------------------------------------------------------------------
+          # common defaults that all the 'listen' and 'backend' sections will
+          # use if not designated in their block
+          #---------------------------------------------------------------------
+          defaults
+              mode                    http
+              log                     global
+              option                  httplog
+              option                  dontlognull
+              option http-server-close
+              option forwardfor       except 127.0.0.0/8
+              option                  redispatch
+              retries                 3
+              timeout http-request    10s
+              timeout queue           1m
+              timeout connect         10s
+              timeout client          1m
+              timeout server          1m
+              timeout http-keep-alive 10s
+              timeout check           10s
+              maxconn                 3000
+          
+          #---------------------------------------------------------------------
+          
+          listen stats
+              bind :9000
+              mode http
+              stats enable
+              stats uri /
+              monitor-uri /healthz
+          
+          frontend openshift-api-server
+              bind *:6443
+              default_backend openshift-api-server
+              mode tcp
+              option tcplog
+          
+          backend openshift-api-server
+              balance source
+              mode tcp
+              server bootstrap 192.168.189.19:6443 check
+              server master0 192.168.189.20:6443 check
+              server master1 192.168.189.21:6443 check
+              server master2 192.168.189.22:6443 check
+          
+          frontend machine-config-server
+              bind *:22623
+              default_backend machine-config-server
+              mode tcp
+              option tcplog
+          
+          backend machine-config-server
+              balance source
+              mode tcp
+              server bootstrap 192.168.189.19:22623 check
+              server master0 192.168.189.20:22623 check
+              server master1 192.168.189.21:22623 check
+              server master2 192.168.189.22:22623 check
+          
+          frontend ingress-http
+              bind *:80
+              default_backend ingress-http
+              mode tcp
+              option tcplog
+          
+          backend ingress-http
+              balance source
+              mode tcp
+              server worker0 192.168.189.30:80 check
+              server worker1 192.168.189.31:80 check
+              server worker2 192.168.189.32:80 check
+          
+          frontend ingress-https
+              bind *:443
+              default_backend ingress-https
+              mode tcp
+              option tcplog
+          
+          backend ingress-https
+              balance source
+              mode tcp
+              server worker0 192.168.189.30:443 check
+              server worker1 192.168.189.31:443 check
+              server worker2 192.168.189.32:443 check
+          
+          #---------------------------------------------------------------------
+      mode: 420
+systemd:
+  units:
+    - name: haproxy.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=haproxy
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        TimeoutStartSec=10
+        ExecStartPre=-/bin/podman kill haproxy
+        ExecStartPre=-/bin/podman rm haproxy
+        #ExecStartPre=/bin/podman pull haproxy:lts-alpine
+        ExecStart=/bin/podman run --name haproxy \
+          -p 22623:22623 -p 6443:6443 -p 443:443 -p 80:80 \
+          -v /etc/haproxy:/usr/local/etc/haproxy:ro \
+          haproxy:lts-alpine
+        ExecReload=/bin/podman kill -s HUP haproxy
+
+        ExecStop=/bin/podman stop haproxy
+
+        [Install]
+        WantedBy=multi-user.target

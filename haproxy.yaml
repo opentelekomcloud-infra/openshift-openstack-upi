@@ -1,0 +1,70 @@
+# Required Python packages:
+#
+# ansible
+# openstackclient
+# openstacksdk
+# netaddr
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+  - name: 'Create the haproxy server port'
+    openstack.cloud.port:
+      name: "{{ os_port_haproxy }}"
+      network: "{{ os_network }}"
+      security_groups:
+      - "{{ os_sg_haproxy }}"
+      fixed_ips:
+        - ip_address: "{{ os_subnet_range | next_nth_usable(13) }}"
+
+  - name: 'Set haproxy auto_ip to false'
+    ansible.builtin.set_fact:
+      haproxy_auto_ip: false
+    when: os_haproxy_fip is not defined
+
+  - name: 'Create the haproxy server'
+    openstack.cloud.server:
+      name: "{{ os_haproxy_server_name }}"
+      image: "{{ os_image_rhcos }}"
+      flavor: "{{ os_flavor_haproxy }}"
+      userdata: "{{ lookup('file', os_haproxy_ignition) | string }}"
+      floating_ips: "{{ os_haproxy_fip | default(omit) }}"
+      auto_ip: "{{ haproxy_auto_ip | default(omit) }}"
+      nics:
+      - port-name: "{{ os_port_haproxy }}"
+
+  - name: Add haproxy to API pub 6443
+    opentelekomcloud.cloud.lb_member:
+      name: "{{ os_haproxy_server_name }}"
+      address: "{{ os_subnet_range | next_nth_usable(13) }}"
+      protocol_port: 6443
+      pool: "{{ elb_api_pool_name }}"
+      subnet: "{{ os_subnet }}"
+
+  - name: Add haproxy to API Int pub 6443
+    opentelekomcloud.cloud.lb_member:
+      name: "{{ os_haproxy_server_name }}"
+      address: "{{ os_subnet_range | next_nth_usable(13) }}"
+      protocol_port: 6443
+      pool: "{{ elb_api_int_pool_name }}"
+      subnet: "{{ os_subnet }}"
+
+  - name: Add haproxy to API Int pub 22623
+    opentelekomcloud.cloud.lb_member:
+      name: "{{ os_haproxy_server_name }}"
+      address: "{{ os_subnet_range | next_nth_usable(13) }}"
+      protocol_port: 22623
+      pool: "{{ elb_api_int_pool_22623_name }}"
+      subnet: "{{ os_subnet }}"
+
+  - name: Add haproxy to Ingress 443
+    opentelekomcloud.cloud.lb_member:
+      name: "{{ os_haproxy_server_name }}"
+      address: "{{ os_subnet_range | next_nth_usable(13) }}"
+      protocol_port: 443
+      pool: "{{ elb_ingress_pool_443_name }}"
+      subnet: "{{ os_subnet }}"
+

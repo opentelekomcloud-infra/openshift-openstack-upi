@@ -1,0 +1,10 @@
+{
+  "ignition": {
+    "config": {
+      "merge": [{
+          "source": ""
+        }]
+    },
+    "version": "3.1.0"
+  }
+}

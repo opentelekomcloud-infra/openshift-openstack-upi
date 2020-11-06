@@ -1,0 +1,55 @@
+# Required Python packages:
+#
+# ansible
+# openstackclient
+# openstacksdk
+# netaddr
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: 'Create the primary cluster network'
+      os_network:
+        name: "{{ os_network }}"
+
+    - name: 'Create the primary cluster subnet'
+      os_subnet:
+        name: "{{ os_subnet }}"
+        network_name: "{{ os_network }}"
+        cidr: "{{ os_subnet_range }}"
+        allocation_pool_start: "{{ os_subnet_range | next_nth_usable(10) }}"
+        allocation_pool_end: "{{ os_subnet_range | ipaddr('last_usable') }}"
+        dns_nameservers: "{{ dns_nameservers }}"
+
+    - name: 'Create external router'
+      os_router:
+        name: "{{ os_router }}"
+        network: "{{ os_external_network }}"
+        enable_snat: "{{ enable_snat }} "
+        interfaces:
+        - "{{ os_subnet }}"
+      when: os_external_network is defined and os_external_network|length>0
+
+        #    - name: 'Create the API port'
+        #      os_port:
+        #        name: "{{ os_port_api }}"
+        #        network: "{{ os_network }}"
+        #        device_owner: 'neutron:VIP'
+        #        security_groups:
+        #        - "{{ os_sg_master }}"
+        #        fixed_ips:
+        #        - ip_address: "{{ os_apiVIP }}"
+        #
+        #    - name: 'Create the Ingress port'
+        #      os_port:
+        #        name: "{{ os_port_ingress }}"
+        #        network: "{{ os_network }}"
+        #        device_owner: 'neutron:VIP'
+        #        security_groups:
+        #        - "{{ os_sg_worker }}"
+        #        fixed_ips:
+        #        - ip_address: "{{ os_ingressVIP }}"
+        #

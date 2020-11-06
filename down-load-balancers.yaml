@@ -1,0 +1,111 @@
+# Required Python packages:
+#
+# ansible
+# openstackcli
+# openstacksdk
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Remove haproxy to Ingress 443
+      opentelekomcloud.cloud.lb_member:
+        name: "{{ os_haproxy_server_name }}"
+        pool: "{{ elb_ingress_pool_443_name }}"
+        state: absent
+
+    - name: Remove haproxy to Ingress 443
+      opentelekomcloud.cloud.lb_member:
+        name: "{{ os_haproxy_server_name }}"
+        pool: "{{ elb_api_int_pool_name }}"
+        state: absent
+
+    - name: Remove haproxy to Ingress 22623
+      opentelekomcloud.cloud.lb_member:
+        name: "{{ os_haproxy_server_name }}"
+        pool: "{{ elb_api_int_pool_22623_name }}"
+        state: absent
+
+    - name: Remove haproxy to Ingress 443
+      opentelekomcloud.cloud.lb_member:
+        name: "{{ os_haproxy_server_name }}"
+        pool: "{{ elb_api_pool_name }}"
+        state: absent
+
+    - name: Delete Ingress 443 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_ingress_hm_443_name }}"
+        state: absent
+
+    - name: Delete Ingress 443 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_ingress_pool_443_name }}"
+        state: absent
+
+    - name: Delete Ingress Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_ingress_listener_443_name }}"
+        state: absent
+
+    - name: Delete Ingress LB
+      opentelekomcloud.cloud.loadbalancer:
+        name: "{{ elb_ingress_name }}"
+        state: absent
+
+    - name: Delete Int 22623 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_api_int_hm_22623_name }}"
+        state: absent
+
+    - name: Delete Internal Machine API server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_api_int_pool_22623_name }}"
+        state: absent
+
+    - name: Delete Internal Machine API Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_api_int_listener_22623_name }}"
+        state: absent
+
+    - name: Delete Int 6443 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_api_int_hm_name }}"
+        state: absent
+
+    - name: Delete Internal 6443 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_api_int_pool_name }}"
+        state: absent
+
+    - name: Delete Internal API Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_api_int_listener_name }}"
+        state: absent
+
+    - name: Delete Internal API LB
+      opentelekomcloud.cloud.loadbalancer:
+        name: "{{ elb_api_int_name }}"
+        state: absent
+
+    - name: Delete 6443 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_api_hm_name }}"
+        state: absent
+
+    - name: Delete 6443 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_api_pool_name }}"
+        state: absent
+
+    - name: Delete API Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_api_listener_name }}"
+        state: absent
+
+    - name: Delete Public API LB
+      opentelekomcloud.cloud.loadbalancer:
+        name: "{{ elb_api_name }}"
+        state: absent
+

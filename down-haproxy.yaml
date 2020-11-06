@@ -1,0 +1,20 @@
+# Required Python packages:
+#
+# ansible
+# openstacksdk
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+  - name: 'Remove the haproxy server'
+    os_server:
+      name: "{{ os_haproxy_server_name }}"
+      state: absent
+
+  - name: 'Remove the haproxy server port'
+    os_port:
+      name: "{{ os_port_haproxy }}"
+      state: absent
