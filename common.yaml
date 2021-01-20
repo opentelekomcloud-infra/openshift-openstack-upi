@@ -2,12 +2,15 @@
   gather_facts: no
 
   vars_files:
-  - metadata.json
+  - "{{ cluster_cfg_dir }}/metadata.json"
 
   tasks:
   - name: 'Compute resource names'
     set_fact:
+      ssh_public_key: "{{ lookup('file', ssh_public_key_file) | string }}"
       cluster_id_tag: "openshiftClusterID={{ infraID }}"
+      clusterName: "{{ clusterName }}"
+
       primary_cluster_network_tag: "{{ infraID }}-primaryClusterNetwork"
       os_infra_id: "{{ infraID }}"
       os_network: "{{ infraID }}-network"
@@ -40,14 +43,16 @@
       # Service subnet name
       os_svc_subnet: "{{ infraID }}-kuryr-service-subnet"
       # Ignition files
-      os_bootstrap_ignition: "{{ infraID }}-bootstrap-ignition.json"
-      os_haproxy_ignition: "{{ infraID }}-haproxy-ignition.json"
-      os_master_0_ignition: "{{ infraID }}-master-0-ignition.json"
-      os_master_1_ignition: "{{ infraID }}-master-1-ignition.json"
-      os_master_2_ignition: "{{ infraID }}-master-2-ignition.json"
-      os_worker_0_ignition: "{{ infraID }}-worker-0-ignition.json"
-      os_worker_1_ignition: "{{ infraID }}-worker-1-ignition.json"
-      os_worker_2_ignition: "{{ infraID }}-worker-2-ignition.json"
+      os_bootstrap_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-bootstrap-ignition.json"
+      os_haproxy_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-haproxy-ignition.json"
+      os_haproxy_ip_address: "{{ os_subnet_range | next_nth_usable(10) }}"
+
+      os_master_0_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-master-0-ignition.json"
+      os_master_1_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-master-1-ignition.json"
+      os_master_2_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-master-2-ignition.json"
+      os_worker_0_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-worker-0-ignition.json"
+      os_worker_1_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-worker-1-ignition.json"
+      os_worker_2_ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-worker-2-ignition.json"
 
       master_volume_size: 120
       worker_volume_size: 120
@@ -70,3 +75,58 @@
       elb_ingress_listener_443_name: "{{ infraID }}-listener-ingress-443"
       elb_ingress_pool_443_name: "{{ infraID }}-pool-ingress-443"
       elb_ingress_hm_443_name: "{{ infraID }}-hm-ingress-443"
+
+  - set_fact:
+      dns_zone: "{{ clusterName }}.{{ base_domain }}"
+      infraID: "{{ infraID }}"
+
+  - set_fact:
+      control_plane_hosts:
+        - etcd_name: "etcd-0.{{ dns_zone }}"
+          ip_address: "{{ os_subnet_range | next_nth_usable(20) }}"
+          port_name: "{{ os_port_master }}-0"
+          az: eu-de-01
+          server_name: "{{ infraID }}-master-0"
+          ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-master-0-ignition.json"
+
+        - etcd_name: "etcd-1.{{ dns_zone }}"
+          ip_address: "{{ os_subnet_range | next_nth_usable(21) }}"
+
+          port_name: "{{ os_port_master }}-1"
+          az: eu-de-02
+          server_name: "{{ infraID }}-master-1"
+          ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-master-1-ignition.json"
+
+        - etcd_name: "etcd-2.{{ dns_zone }}"
+          ip_address: "{{ os_subnet_range | next_nth_usable(22) }}"
+          port_name: "{{ os_port_master }}-2"
+          az: eu-de-03
+          server_name: "{{ infraID }}-master-2"
+          ignition: "{{ cluster_cfg_dir }}/{{ infraID }}-master-2-ignition.json"
+
+
+      compute_hosts:
+        - ip_address: "{{ os_subnet_range | next_nth_usable(30) }}"
+          port_name: "{{ os_port_worker }}-0"
+          az: eu-de-01
+          server_name: "{{ infraID }}-worker-0"
+          ignition: "{{ cluster_cfg_dir }}/worker.ign"
+
+        - ip_address: "{{ os_subnet_range | next_nth_usable(31) }}"
+          port_name: "{{ os_port_worker }}-1"
+          az: eu-de-02
+          server_name: "{{ infraID }}-worker-1"
+          ignition: "{{ cluster_cfg_dir }}/worker.ign"
+
+        - ip_address: "{{ os_subnet_range | next_nth_usable(32) }}"
+          port_name: "{{ os_port_worker }}-2"
+          az: eu-de-03
+          server_name: "{{ infraID }}-worker-2"
+          ignition: "{{ cluster_cfg_dir }}/worker.ign"
+
+      dns_etcd_entries:
+        - "0 10 2380 etcd-0.{{ dns_zone }}"
+        - "0 10 2380 etcd-1.{{ dns_zone }}"
+        - "0 10 2380 etcd-2.{{ dns_zone }}"
+
+

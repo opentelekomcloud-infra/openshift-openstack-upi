@@ -3,6 +3,9 @@ all:
     localhost:
       ansible_connection: local
       ansible_python_interpreter: "{{ansible_playbook_python}}"
+      cluster_cfg_dir: stg
+      base_domain: eco.tsi-dev.otc-service.com
+      ssh_public_key_file: "~/.ssh/openshift_kp.pub"
 
       # User-provided values
       os_subnet_range: '192.168.189.0/24'

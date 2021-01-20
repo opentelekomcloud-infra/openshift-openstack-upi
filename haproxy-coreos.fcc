@@ -4,7 +4,7 @@ passwd:
   users:
     - name: core
       ssh_authorized_keys:
-        - ssh-rsa ______PUB_KEY_HERE_____
+        - {{ ssh_public_key }}
       groups:
         - sudo
 storage:
@@ -18,7 +18,7 @@ storage:
       mode: 0640
     - path: /etc/hostname
       contents:
-        inline: ____INFRA_ID-haproxy-0____
+        inline: {{ infraID }}-haproxy-0
       mode: 0420
     - path: /etc/haproxy/haproxy.cfg
       contents:
@@ -144,6 +144,7 @@ systemd:
         ExecStartPre=-/bin/podman rm haproxy
         #ExecStartPre=/bin/podman pull haproxy:lts-alpine
         ExecStart=/bin/podman run --name haproxy \
+          --network host \
           -p 22623:22623 -p 6443:6443 -p 443:443 -p 80:80 \
           -v /etc/haproxy:/usr/local/etc/haproxy:ro \
           haproxy:lts-alpine

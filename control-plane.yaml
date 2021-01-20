@@ -11,91 +11,29 @@
   gather_facts: no
 
   tasks:
-    - name: 'Create the Control Plane port 0'
-      os_port:
-        name: "{{ os_port_master}}-0"
+    - name: 'Create the Control Plane ports'
+      openstack.cloud.port:
+        name: "{{ item.port_name }}"
         network: "{{ os_network }}"
         security_groups:
         - "{{ os_sg_master }}"
         fixed_ips:
-          - ip_address: "{{ os_subnet_range | next_nth_usable(20) }}"
+          - ip_address: "{{ item.ip_address }}"
         allowed_address_pairs:
           - ip_address: "{{ os_apiVIP }}"
           - ip_address: "{{ os_ingressVIP }}"
+      loop: "{{ control_plane_hosts }}"
 
-    - name: 'Create the Control Plane port 1'
-      os_port:
-        name: "{{ os_port_master}}-1"
-        network: "{{ os_network }}"
-        security_groups:
-        - "{{ os_sg_master }}"
-        fixed_ips:
-          - ip_address: "{{ os_subnet_range | next_nth_usable(21) }}"
-        allowed_address_pairs:
-          - ip_address: "{{ os_apiVIP }}"
-          - ip_address: "{{ os_ingressVIP }}"
-
-    - name: 'Create the Control Plane port 2'
-      os_port:
-        name: "{{ os_port_master}}-2"
-        network: "{{ os_network }}"
-        security_groups:
-        - "{{ os_sg_master }}"
-        fixed_ips:
-          - ip_address: "{{ os_subnet_range | next_nth_usable(22) }}"
-        allowed_address_pairs:
-          - ip_address: "{{ os_apiVIP }}"
-          - ip_address: "{{ os_ingressVIP }}"
-
-
-          #  - name: 'Create the Control Plane ports'
-          #    os_port:
-          #      name: "{{ item.1 }}-{{ item.0 }}"
-          #      network: "{{ os_network }}"
-          #      security_groups:
-          #      - "{{ os_sg_master }}"
-          #      allowed_address_pairs:
-          #      - ip_address: "{{ os_apiVIP }}"
-          #      - ip_address: "{{ os_ingressVIP }}"
-          #    with_indexed_items: "{{ [os_port_master] * os_cp_nodes_number }}"
-          #    register: ports
-
-    - name: 'Create the Control Plane server 0'
-      os_server:
-        name: "{{ os_cp_server_name }}-0"
+    - name: 'Create the Control Plane servers'
+      openstack.cloud.server:
+        name: "{{ item.server_name }}"
         image: "{{ os_image_rhcos }}"
         flavor: "{{ os_flavor_master }}"
         auto_ip: no
-        userdata: "{{ lookup('file', os_master_0_ignition) | string }}"
+        userdata: "{{ lookup('file', item.ignition) | string }}"
         nics:
-        - port-name: "{{ os_port_master }}-0"
-        availability_zone: eu-de-01
+        - port-name: "{{ item.port_name }}"
+        availability_zone: "{{ item.az }}"
         boot_from_volume: true
         volume_size: "{{ master_volume_size }}"
-
-    - name: 'Create the Control Plane server 1'
-      os_server:
-        name: "{{ os_cp_server_name }}-1"
-        image: "{{ os_image_rhcos }}"
-        flavor: "{{ os_flavor_master }}"
-        auto_ip: no
-        userdata: "{{ lookup('file', os_master_1_ignition) | string }}"
-        nics:
-        - port-name: "{{ os_port_master }}-1"
-        availability_zone: eu-de-02
-        boot_from_volume: true
-        volume_size: "{{ master_volume_size }}"
-
-    - name: 'Create the Control Plane server 2'
-      os_server:
-        name: "{{ os_cp_server_name }}-2"
-        image: "{{ os_image_rhcos }}"
-        flavor: "{{ os_flavor_master }}"
-        auto_ip: no
-        userdata: "{{ lookup('file', os_master_2_ignition) | string }}"
-        nics:
-        - port-name: "{{ os_port_master }}-2"
-        availability_zone: eu-de-03
-        boot_from_volume: true
-        volume_size: "{{ master_volume_size }}"
-
+      loop: "{{ control_plane_hosts }}"

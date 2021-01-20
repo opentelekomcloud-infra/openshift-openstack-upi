@@ -1,0 +1,58 @@
+# Required Python packages:
+#
+# ansible
+# openstacksdk
+
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Create DNS zone
+      opentelekomcloud.cloud.dns_zones:
+        name: "{{ dns_zone }}"
+        zone_type: private
+        router: "{{ os_router }}"
+      register: zone
+
+    - name: Create API record
+      opentelekomcloud.cloud.dns_recordset:
+        recordset_name: "api.{{ dns_zone }}."
+        zone_id: "{{ zone.zone.id }}"
+        type: "A"
+        records:
+          - "{{ os_apiVIP }}"
+
+    - name: Create API-int record
+      opentelekomcloud.cloud.dns_recordset:
+        recordset_name: "api-int.{{ dns_zone }}."
+        zone_id: "{{ zone.zone.id }}"
+        type: "A"
+        records:
+          - "{{ os_apiVIP_int }}"
+
+    - name: Create Ingress record
+      opentelekomcloud.cloud.dns_recordset:
+        recordset_name: "*.apps.{{ dns_zone }}."
+        zone_id: "{{ zone.zone.id }}"
+        type: "A"
+        records:
+          - "{{ os_ingressVIP }}"
+
+    - name: Create ETCD SRV record
+      opentelekomcloud.cloud.dns_recordset:
+        recordset_name: "_etcd-server-ssl._tcp.{{ dns_zone }}."
+        zone_id: "{{ zone.zone.id }}"
+        type: "SRV"
+        records: "{{ dns_etcd_entries }}"
+
+    - name: Create ETCD records
+      opentelekomcloud.cloud.dns_recordset:
+        recordset_name: "{{ item.etcd_name }}."
+        zone_id: "{{ zone.zone.id }}"
+        type: "A"
+        records:
+          - "{{ item.ip_address }}"
+      loop: "{{ control_plane_hosts }}"
+

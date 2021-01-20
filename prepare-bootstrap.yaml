@@ -1,0 +1,14 @@
+# Required Python packages:
+#
+# ansible
+# openstacksdk
+
+- import_playbook: common.yaml
+
+- hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Process bootstrap ignition file
+      ansible.builtin.script: "prepare_bootstrap_ignition.py {{ infraID }} {{ cluster_cfg_dir }} "
+

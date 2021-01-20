@@ -1,0 +1,23 @@
+apiVersion: v1
+baseDomain: eco.tsi-dev.otc-service.com
+compute:
+- name: worker
+  replicas: 0
+controlPlane:
+  name: master
+  replicas: 3
+metadata:
+  name: osinfra-stg
+networking:
+  clusterNetworks:
+  - cidr: 10.254.0.0/16
+    hostPrefix: 24
+  networkType: OpenShiftSDN
+  serviceNetwork:
+  - 172.30.0.0/16
+  machineNetwork:
+  - cidr: 192.168.189.0/24
+platform:
+  none: {}
+pullSecret: '{"auths":{"fake":{"auth": "bar"}}}'
+sshKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCcnRWjmKWLku2NAzXDw03Ixmt5KT2pR+1sNj1EyjBNljL9mX7VmvvZN107YjkOj16bF6aKgpiIvtcwGs2CL/3rdkPxW6BIpLmB2ol4DIXtdkSRCaal0qkdIilYxsYJ9tmsoHbK1nwvEfuw0X8R3AjFvhGMfezPAMtPljpyp+XeB7uFmWBzp2UOuU6IsOK45omOVdt3+Jirxba1XAnAAz4aE5WbF7y6MgEqaRLXYUuvE9f61VLs7la2slm2cwt5wwhDe488c/SZb3W7o/7fESvqgn0JTpjnDHRS/pyZYELL9Tm++GsFUWn5Ct/Cx6UYvLJ7XVSx+zuk5SwYh+Td32aB
