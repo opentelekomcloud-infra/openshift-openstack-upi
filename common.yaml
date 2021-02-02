@@ -76,6 +76,10 @@
       elb_ingress_pool_443_name: "{{ infraID }}-pool-ingress-443"
       elb_ingress_hm_443_name: "{{ infraID }}-hm-ingress-443"
 
+      elb_ingress_listener_80_name: "{{ infraID }}-listener-ingress-80"
+      elb_ingress_pool_80_name: "{{ infraID }}-pool-ingress-80"
+      elb_ingress_hm_80_name: "{{ infraID }}-hm-ingress-80"
+
   - set_fact:
       dns_zone: "{{ clusterName }}.{{ base_domain }}"
       infraID: "{{ infraID }}"

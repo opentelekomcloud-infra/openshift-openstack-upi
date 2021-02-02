@@ -107,7 +107,7 @@
         vip_address: "{{ os_ingressVIP }}"
         vip_subnet: "{{ os_subnet }}"
 
-    - name: Create Ingress Listener
+    - name: Create Ingress 443 Listener
       opentelekomcloud.cloud.lb_listener:
         name: "{{ elb_ingress_listener_443_name }}"
         loadbalancer: "{{ elb_ingress_name }}"
@@ -128,6 +128,32 @@
         name: "{{ elb_ingress_hm_443_name }}"
         monitor_port: 443
         pool: "{{ elb_ingress_pool_443_name }}"
+        type: tcp
+        max_retries: 3
+        delay: 5
+        monitor_timeout: 10
+    
+    - name: Create Ingress 80  Listener
+      opentelekomcloud.cloud.lb_listener:
+        name: "{{ elb_ingress_listener_80_name }}"
+        loadbalancer: "{{ elb_ingress_name }}"
+        protocol: tcp
+        protocol_port: 80
+        default_pool: "{{ elb_ingress_pool_80_name }}"
+
+    - name: Create Ingress 80 server pool
+      opentelekomcloud.cloud.lb_pool:
+        name: "{{ elb_ingress_pool_80_name }}"
+        description: "Pool of Ingress backends"
+        listener: "{{ elb_ingress_listener_80_name }}"
+        lb_algorithm: round_robin
+        protocol: tcp
+
+    - name: Create Ingress 80 HM
+      opentelekomcloud.cloud.lb_healthmonitor:
+        name: "{{ elb_ingress_hm_80_name }}"
+        monitor_port: 80
+        pool: "{{ elb_ingress_pool_80_name }}"
         type: tcp
         max_retries: 3
         delay: 5
